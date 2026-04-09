@@ -2,6 +2,7 @@ const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion 
 const pino = require("pino")
 
 const FIREBASE_URL = process.env.FIREBASE_URL
+const BOT_PHONE = process.env.BOT_PHONE
 
 async function startBot(){
 
@@ -16,9 +17,7 @@ logger: pino({ level:"silent"})
 
 if(!sock.authState.creds.registered){
 
-const phoneNumber="+918788273897"
-
-const code = await sock.requestPairingCode(phoneNumber)
+const code = await sock.requestPairingCode(BOT_PHONE)
 
 console.log("PAIRING CODE:",code)
 
