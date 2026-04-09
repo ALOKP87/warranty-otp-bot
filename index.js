@@ -1,5 +1,4 @@
-const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys")
-const qrcode = require("qrcode-terminal")
+const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require("baileys")
 const pino = require("pino")
 
 const FIREBASE_URL = process.env.FIREBASE_URL
@@ -15,16 +14,20 @@ auth: state,
 logger: pino({ level:"silent"})
 })
 
-sock.ev.on("connection.update",(update)=>{
+if(!sock.authState.creds.registered){
 
-const { connection, qr } = update
+const phoneNumber="YOUR_NUMBER_WITH_COUNTRY_CODE"
 
-if(qr){
-console.log("SCAN QR")
-qrcode.generate(qr,{small:true})
+const code = await sock.requestPairingCode(phoneNumber)
+
+console.log("PAIRING CODE:",code)
+
 }
 
-if(connection === "open"){
+sock.ev.on("connection.update",(update)=>{
+
+if(update.connection==="open"){
+
 console.log("BOT CONNECTED")
 
 startOTPWatcher(sock)
@@ -41,8 +44,6 @@ async function startOTPWatcher(sock){
 
 setInterval(async ()=>{
 
-try{
-
 const res = await fetch(`${FIREBASE_URL}/otp_requests.json`)
 const data = await res.json()
 
@@ -57,12 +58,6 @@ text:`Prince Auto Parts Warranty Login
 
 Your OTP: ${otp}`
 })
-
-}
-
-}catch(e){
-
-console.log("Error:",e)
 
 }
 
