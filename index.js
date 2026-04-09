@@ -1,5 +1,7 @@
-const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require("baileys")
+const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys")
+const qrcode = require("qrcode-terminal")
 const pino = require("pino")
+const fetch = require("node-fetch")
 
 const FIREBASE_URL = process.env.FIREBASE_URL
 const BOT_PHONE = process.env.BOT_PHONE
@@ -15,22 +17,18 @@ auth: state,
 logger: pino({ level:"silent"})
 })
 
-if(!sock.authState.creds.registered){
-
-const code = await sock.requestPairingCode(BOT_PHONE)
-
-console.log("PAIRING CODE:",code)
-
-}
-
 sock.ev.on("connection.update",(update)=>{
 
-if(update.connection==="open"){
+const { connection, qr } = update
 
+if(qr){
+console.log("SCAN QR BELOW")
+qrcode.generate(qr,{small:true})
+}
+
+if(connection === "open"){
 console.log("BOT CONNECTED")
-
 startOTPWatcher(sock)
-
 }
 
 })
@@ -42,6 +40,8 @@ sock.ev.on("creds.update", saveCreds)
 async function startOTPWatcher(sock){
 
 setInterval(async ()=>{
+
+try{
 
 const res = await fetch(`${FIREBASE_URL}/otp_requests.json`)
 const data = await res.json()
@@ -55,8 +55,22 @@ const otp = data[phone].otp
 await sock.sendMessage(phone+"@s.whatsapp.net",{
 text:`Prince Auto Parts Warranty Login
 
-Your OTP: ${otp}`
+Your OTP: ${otp}
+
+Do not share this code with anyone.`
 })
+
+console.log("OTP sent to:",phone)
+
+await fetch(`${FIREBASE_URL}/otp_requests/${phone}.json`,{
+method:"DELETE"
+})
+
+}
+
+}catch(e){
+
+console.log("Error:",e)
 
 }
 
