@@ -16,7 +16,7 @@ logger: pino({ level:"silent"})
 
 if(!sock.authState.creds.registered){
 
-const phoneNumber="YOUR_NUMBER_WITH_COUNTRY_CODE"
+const phoneNumber="+918788273897"
 
 const code = await sock.requestPairingCode(phoneNumber)
 
