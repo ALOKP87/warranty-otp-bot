@@ -1,17 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Firebase OTP</title>
+  <title>OTP Test</title>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 </head>
 
-<body style="font-family:sans-serif;text-align:center;margin-top:50px;">
+<body style="text-align:center;margin-top:50px;">
 
-<h2>Phone Login</h2>
+<h2>OTP Login</h2>
 
 <input id="phone" placeholder="+91XXXXXXXXXX"><br><br>
 <button onclick="sendOTP()">Send OTP</button>
@@ -19,7 +18,7 @@
 <br><br>
 
 <input id="otp" placeholder="Enter OTP"><br><br>
-<button onclick="verifyOTP()">Verify OTP</button>
+<button onclick="verifyOTP()">Verify</button>
 
 <br><br>
 
@@ -29,12 +28,48 @@
 
 <script>
 
-// 🔥 CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyDmdJguF1NVk3FMygezU677ZyPrMcRnh_0",
   authDomain: "form-waranty.firebaseapp.com",
-  databaseURL: "https://form-waranty-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "form-waranty",
+};
+
+firebase.initializeApp(firebaseConfig);
+
+// 🔥 IMPORTANT: reCAPTCHA render
+window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha', {
+  size: 'normal'
+});
+
+function sendOTP() {
+  const phone = document.getElementById("phone").value;
+
+  firebase.auth().signInWithPhoneNumber(phone, window.recaptchaVerifier)
+    .then(res => {
+      window.confirmationResult = res;
+      document.getElementById("status").innerText = "OTP Sent";
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById("status").innerText = "Error: " + err.message;
+    });
+}
+
+function verifyOTP() {
+  const code = document.getElementById("otp").value;
+
+  confirmationResult.confirm(code)
+    .then(() => {
+      document.getElementById("status").innerText = "Login Success";
+    })
+    .catch(() => {
+      document.getElementById("status").innerText = "Invalid OTP";
+    });
+}
+
+</script>
+
+</body>
+</html>  projectId: "form-waranty",
   storageBucket: "form-waranty.firebasestorage.app",
   messagingSenderId: "158453270080",
   appId: "1:158453270080:web:6be998a97b468b6216c1a5"
