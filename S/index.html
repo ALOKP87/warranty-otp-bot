@@ -1,133 +1,253 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>OTP Test</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI System</title>
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
+<style>
+
+/* 🔥 GLOBAL */
+body {
+  margin:0;
+  font-family:Poppins;
+  background:linear-gradient(135deg,#0f172a,#020617);
+  color:white;
+  overflow:hidden;
+}
+
+/* 🔥 GLASS */
+.glass {
+  backdrop-filter: blur(20px);
+  background: rgba(255,255,255,0.05);
+  border-radius:20px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);
+}
+
+/* 🔥 LAYOUT */
+#app {
+  display:flex;
+  height:100vh;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width:260px;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+}
+
+.logo {
+  font-size:22px;
+  font-weight:600;
+  margin-bottom:20px;
+}
+
+/* PROJECT LIST */
+.project-item {
+  padding:10px;
+  margin:5px 0;
+  cursor:pointer;
+  border-radius:10px;
+  transition:0.3s;
+}
+
+.project-item:hover {
+  background:rgba(255,255,255,0.1);
+}
+
+/* MAIN */
+.main {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  padding:15px;
+}
+
+/* TOPBAR */
+.topbar {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px;
+}
+
+/* CHAT */
+.chat-area {
+  flex:1;
+  overflow:auto;
+  padding:10px;
+}
+
+/* MESSAGE */
+.message {
+  max-width:70%;
+  padding:12px;
+  margin:10px 0;
+  border-radius:15px;
+  animation:fadeUp 0.3s ease;
+}
+
+.user {
+  background:#2563eb;
+  margin-left:auto;
+}
+
+.ai {
+  background:rgba(255,255,255,0.1);
+}
+
+/* INPUT */
+.input-area {
+  display:flex;
+  gap:10px;
+}
+
+input {
+  flex:1;
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  outline:none;
+}
+
+button {
+  padding:12px 16px;
+  border:none;
+  border-radius:12px;
+  background:#6366f1;
+  color:white;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+button:hover {
+  transform:scale(1.05);
+}
+
+/* DEBUG PANEL */
+#debugPanel {
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  height:250px;
+  background:black;
+  color:#00ff88;
+  font-size:12px;
+  overflow:auto;
+  display:none;
+  padding:10px;
+}
+
+/* FLOAT BUTTON */
+.debug-btn {
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:#22c55e;
+  border-radius:50%;
+  width:50px;
+  height:50px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+}
+
+/* ANIMATION */
+@keyframes fadeUp {
+  from {opacity:0; transform:translateY(10px);}
+  to {opacity:1; transform:translateY(0);}
+}
+
+</style>
 </head>
 
-<body style="text-align:center;margin-top:50px;">
+<body>
 
-<h2>OTP Login</h2>
+<div id="app">
 
-<input id="phone" placeholder="+91XXXXXXXXXX"><br><br>
-<button onclick="sendOTP()">Send OTP</button>
+<!-- SIDEBAR -->
+<div class="sidebar glass">
+  <div class="logo">⚡ AI SYSTEM</div>
 
-<br><br>
+  <div id="projects"></div>
 
-<input id="otp" placeholder="Enter OTP"><br><br>
-<button onclick="verifyOTP()">Verify</button>
+  <button onclick="createProject()">+ Project</button>
+</div>
 
-<br><br>
+<!-- MAIN -->
+<div class="main glass">
 
-<div id="recaptcha"></div>
+  <div class="topbar">
+    <span>Chat</span>
+    <button onclick="logout()">Logout</button>
+  </div>
 
-<p id="status"></p>
+  <div id="chatArea" class="chat-area"></div>
+
+  <div class="input-area">
+    <input id="input" placeholder="Type message...">
+    <button onclick="send()">Send</button>
+  </div>
+
+</div>
+
+</div>
+
+<!-- DEBUG PANEL -->
+<div id="debugPanel"></div>
+
+<!-- DEBUG BUTTON -->
+<div class="debug-btn" onclick="toggleDebug()">🐞</div>
 
 <script>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDmdJguF1NVk3FMygezU677ZyPrMcRnh_0",
-  authDomain: "form-waranty.firebaseapp.com",
-};
-
-firebase.initializeApp(firebaseConfig);
-
-// 🔥 IMPORTANT: reCAPTCHA render
-window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha', {
-  size: 'normal'
-});
-
-function sendOTP() {
-  const phone = document.getElementById("phone").value;
-
-  firebase.auth().signInWithPhoneNumber(phone, window.recaptchaVerifier)
-    .then(res => {
-      window.confirmationResult = res;
-      document.getElementById("status").innerText = "OTP Sent";
-    })
-    .catch(err => {
-      console.error(err);
-      document.getElementById("status").innerText = "Error: " + err.message;
-    });
+/* 🔥 DEBUG SYSTEM */
+function log(msg) {
+  const panel = document.getElementById("debugPanel");
+  panel.innerHTML += msg + "<br>";
+  panel.scrollTop = 999999;
 }
 
-function verifyOTP() {
-  const code = document.getElementById("otp").value;
-
-  confirmationResult.confirm(code)
-    .then(() => {
-      document.getElementById("status").innerText = "Login Success";
-    })
-    .catch(() => {
-      document.getElementById("status").innerText = "Invalid OTP";
-    });
+function toggleDebug() {
+  const panel = document.getElementById("debugPanel");
+  panel.style.display = panel.style.display === "none" ? "block" : "none";
 }
 
-</script>
+/* 🔥 SAMPLE UI LOGIC */
 
-</body>
-</html>  projectId: "form-waranty",
-  storageBucket: "form-waranty.firebasestorage.app",
-  messagingSenderId: "158453270080",
-  appId: "1:158453270080:web:6be998a97b468b6216c1a5"
-};
-
-firebase.initializeApp(firebaseConfig);
-
-// 🔥 INIT RECAPTCHA
-window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha', {
-  size: 'normal'
-});
-
-// SEND OTP
-function sendOTP() {
-  const phone = document.getElementById("phone").value;
-
-  firebase.auth().signInWithPhoneNumber(phone, window.recaptchaVerifier)
-    .then(function(confirmationResult) {
-      window.confirmationResult = confirmationResult;
-      document.getElementById("status").innerText = "OTP Sent ✅";
-    })
-    .catch(function(error) {
-      console.error(error);
-      document.getElementById("status").innerText = "Error ❌";
-    });
+function createProject() {
+  log("Creating project...");
 }
 
-// VERIFY OTP
-function verifyOTP() {
-  const code = document.getElementById("otp").value;
+function send() {
+  const input = document.getElementById("input").value;
 
-  confirmationResult.confirm(code)
-    .then(function(result) {
+  render(input, "user");
+  log("User: " + input);
 
-      const user = result.user;
-
-      document.getElementById("status").innerText = "Login Success ✅";
-
-      // 🔥 SAVE USER IN DATABASE
-      firebase.database().ref("users/" + user.uid).set({
-        uid: user.uid,
-        phone: user.phoneNumber,
-        loginTime: Date.now()
-      });
-
-    })
-    .catch(function(error) {
-      document.getElementById("status").innerText = "Invalid OTP ❌";
-    });
+  setTimeout(() => {
+    render("AI response...", "ai");
+    log("AI replied");
+  }, 1000);
 }
 
-// 🔥 AUTO LOGIN CHECK
-firebase.auth().onAuthStateChanged(user => {
-  if (user) {
-    document.getElementById("status").innerText =
-      "Logged in: " + user.phoneNumber;
-  }
-});
+function render(text, type) {
+  const div = document.createElement("div");
+  div.className = "message " + type;
+  div.innerText = text;
+
+  document.getElementById("chatArea").appendChild(div);
+}
+
+function logout() {
+  log("Logout clicked");
+}
 
 </script>
 
