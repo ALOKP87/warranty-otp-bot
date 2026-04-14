@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Firebase OTP</title>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+</head>
+
+<body style="font-family:sans-serif;text-align:center;margin-top:50px;">
+
+<h2>Phone Login</h2>
+
+<input id="phone" placeholder="+91XXXXXXXXXX"><br><br>
+<button onclick="sendOTP()">Send OTP</button>
+
+<br><br>
+
+<input id="otp" placeholder="Enter OTP"><br><br>
+<button onclick="verifyOTP()">Verify OTP</button>
+
+<br><br>
+
+<div id="recaptcha"></div>
+
+<p id="status"></p>
+
+<script>
+
+// 🔥 CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyDmdJguF1NVk3FMygezU677ZyPrMcRnh_0",
+  authDomain: "form-waranty.firebaseapp.com",
+  databaseURL: "https://form-waranty-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "form-waranty",
+  storageBucket: "form-waranty.firebasestorage.app",
+  messagingSenderId: "158453270080",
+  appId: "1:158453270080:web:6be998a97b468b6216c1a5"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+// 🔥 INIT RECAPTCHA
+window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha', {
+  size: 'normal'
+});
+
+// SEND OTP
+function sendOTP() {
+  const phone = document.getElementById("phone").value;
+
+  firebase.auth().signInWithPhoneNumber(phone, window.recaptchaVerifier)
+    .then(function(confirmationResult) {
+      window.confirmationResult = confirmationResult;
+      document.getElementById("status").innerText = "OTP Sent ✅";
+    })
+    .catch(function(error) {
+      console.error(error);
+      document.getElementById("status").innerText = "Error ❌";
+    });
+}
+
+// VERIFY OTP
+function verifyOTP() {
+  const code = document.getElementById("otp").value;
+
+  confirmationResult.confirm(code)
+    .then(function(result) {
+
+      const user = result.user;
+
+      document.getElementById("status").innerText = "Login Success ✅";
+
+      // 🔥 SAVE USER IN DATABASE
+      firebase.database().ref("users/" + user.uid).set({
+        uid: user.uid,
+        phone: user.phoneNumber,
+        loginTime: Date.now()
+      });
+
+    })
+    .catch(function(error) {
+      document.getElementById("status").innerText = "Invalid OTP ❌";
+    });
+}
+
+// 🔥 AUTO LOGIN CHECK
+firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById("status").innerText =
+      "Logged in: " + user.phoneNumber;
+  }
+});
+
+</script>
+
+</body>
+</html>
